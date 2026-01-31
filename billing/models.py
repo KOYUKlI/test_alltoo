@@ -1,20 +1,25 @@
 from decimal import Decimal
 from django.db import models
+from django.db.models import Q
 from django.core.validators import MinValueValidator
 
 
 class Product(models.Model):
-    # Représente un produit vendable (ce qu'on ajoute à une facture)
     name = models.CharField(max_length=200)
     price = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        validators=[MinValueValidator(Decimal("0.00"))],  # empêche prix négatif
+        validators=[MinValueValidator(Decimal("0.00"))],
     )
-    expiration_date = models.DateField(null=True, blank=True)  # peut être vide
+    expiration_date = models.DateField(null=True, blank=True)
 
-    created_at = models.DateTimeField(auto_now_add=True)  # date de création auto
-    updated_at = models.DateTimeField(auto_now=True)      # date de MAJ auto
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(condition=Q(price__gte=0), name="product_price_gte_0"),
+        ]
 
     def __str__(self):
         return f"{self.name} ({self.price}€)"
@@ -40,16 +45,22 @@ class InvoiceItem(models.Model):
         on_delete=models.PROTECT,  # empêche de supprimer un produit utilisé en facture
         related_name="invoice_items",
     )
-    quantity = models.PositiveIntegerField(
-        validators=[MinValueValidator(1)]  # quantité >= 1
+    quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)])
+
+    unit_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal("0.00"))],
+        default=Decimal("0.00"),
     )
 
-    # Snapshot du prix au moment de l'ajout (la facture ne change pas si le produit change de prix après)
-    unit_price = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
-
     class Meta:
-        # Interdit 2 lignes identiques (même produit) dans la même facture
         unique_together = ("invoice", "product")
+        constraints = [
+            models.CheckConstraint(condition=Q(unit_price__gte=0), name="item_unit_price_gte_0"),
+            models.CheckConstraint(condition=Q(quantity__gte=1), name="item_quantity_gte_1"),
+        ]
+
 
     @property
     def line_total(self) -> Decimal:
