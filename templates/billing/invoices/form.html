@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 {% block content %}
 <h1 class="h3">Créer une facture</h1>
 
@@ -9,33 +10,57 @@
     </div>
   {% endif %}
 
-  <form method="post">
+  <form method="post" id="invoice-form" data-prefix="{{ formset.prefix }}">
     {% csrf_token %}
     {{ formset.management_form }}
 
-    <table class="table">
+    <div class="d-flex justify-content-between align-items-center mt-2">
+      <h2 class="h5 mb-0">Lignes</h2>
+      <button type="button" class="btn btn-outline-primary btn-sm" id="add-row">
+        Ajouter un produit
+      </button>
+    </div>
+
+    <table class="table mt-3" id="items-table">
       <thead>
         <tr>
           <th>Produit</th>
           <th style="max-width:160px;">Quantité</th>
-          <th style="width:140px;">Supprimer</th>
+          <th style="width:140px;">Action</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody id="items-body">
         {% for form in formset %}
-          <tr>
-            <td>{{ form.product }}</td>
-            <td>{{ form.quantity }}</td>
-            <td>{{ form.DELETE }}</td>
-          </tr>
+        <tr class="item-row">
+          <td>{{ form.product }}</td>
+          <td>{{ form.quantity }}</td>
+          <td>
+            <span class="d-none">{{ form.DELETE }}</span>
+            <button type="button" class="btn btn-outline-danger btn-sm js-remove-row">Retirer</button>
+          </td>
+        </tr>
         {% endfor %}
       </tbody>
     </table>
 
-    <div class="d-flex gap-2">
+    <!-- Ligne modèle: Django remplace __prefix__ par l'index (0,1,2,...) -->
+    <template id="empty-row-template">
+      <tr class="item-row">
+        <td>{{ formset.empty_form.product }}</td>
+        <td>{{ formset.empty_form.quantity }}</td>
+        <td>
+          <span class="d-none">{{ formset.empty_form.DELETE }}</span>
+          <button type="button" class="btn btn-outline-danger btn-sm js-remove-row">Retirer</button>
+        </td>
+      </tr>
+    </template>
+
+    <div class="d-flex gap-2 mt-3">
       <button class="btn btn-primary" type="submit">Créer</button>
       <a class="btn btn-outline-secondary" href="/invoices/">Annuler</a>
     </div>
   </form>
 </div>
+
+<script src="{% static 'js/invoice_formset.js' %}"></script>
 {% endblock %}

@@ -56,6 +56,6 @@ class RequiredInvoiceLineFormSet(BaseFormSet):
 InvoiceLineFormSet = formset_factory(
     InvoiceLineForm,
     formset=RequiredInvoiceLineFormSet,
-    extra=5,
+    extra=1,
     can_delete=True,
 )
