@@ -1,4 +1,3 @@
-````md
 # Test Alltoo — Générateur de factures (Django)
 
 ## Setup
@@ -19,5 +18,3 @@ py manage.py runserver
 
 * Produits: [http://127.0.0.1:8000/products/](http://127.0.0.1:8000/products/)
 * Factures: [http://127.0.0.1:8000/invoices/](http://127.0.0.1:8000/invoices/)
-
-````
