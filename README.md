@@ -19,6 +19,12 @@ py manage.py makemigrations
 py manage.py migrate
 ```
 
+## Données de test (seed)
+Génère des produits + factures pour tester la pagination et les totaux.
+
+```bat
+py manage.py seed --clear --products 25 --invoices 15 --max-lines 6
+
 ## Lancer l'app
 
 ```bat
