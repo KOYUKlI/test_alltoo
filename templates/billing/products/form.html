@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h1 class="h3">
+  {% if mode == "create" %}
+    Créer un produit
+  {% else %}
+    Modifier un produit
+  {% endif %}
+</h1>
+
+<div class="card p-3">
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+
+    <div class="d-flex gap-2">
+      <button class="btn btn-primary" type="submit">Enregistrer</button>
+      <a class="btn btn-outline-secondary" href="/products/">Annuler</a>
+    </div>
+  </form>
+</div>
+
+{% endblock %}
