@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="h3">Créer une facture</h1>
+
+<div class="card p-3">
+  {% if formset.non_form_errors %}
+    <div class="alert alert-danger">
+      {{ formset.non_form_errors }}
+    </div>
+  {% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+    {{ formset.management_form }}
+
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Produit</th>
+          <th style="max-width:160px;">Quantité</th>
+          <th style="width:140px;">Supprimer</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for form in formset %}
+          <tr>
+            <td>{{ form.product }}</td>
+            <td>{{ form.quantity }}</td>
+            <td>{{ form.DELETE }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="d-flex gap-2">
+      <button class="btn btn-primary" type="submit">Créer</button>
+      <a class="btn btn-outline-secondary" href="/invoices/">Annuler</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

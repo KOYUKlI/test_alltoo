@@ -1,9 +1,11 @@
+from decimal import Decimal
+
 from django.core.paginator import Paginator
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
-from .forms import ProductForm
-from .models import Product, Invoice
+from .forms import InvoiceLineFormSet, ProductForm
+from .models import Invoice, InvoiceItem, Product
 
 
 # -----------------------------
@@ -61,19 +63,83 @@ def product_delete(request: HttpRequest, pk: int) -> HttpResponse:
 
 
 # -----------------------------
-# FACTURES (stubs pour l'instant)
+# FACTURES (list/create/detail)
 # -----------------------------
 
 def invoice_list(request: HttpRequest) -> HttpResponse:
-    # Placeholder : on implémente après
-    return render(request, "billing/invoices/list.html", {})
+    # Liste des factures (du plus récent au plus ancien)
+    qs = Invoice.objects.order_by("-id")
+
+    paginator = Paginator(qs, 10)
+    page_obj = paginator.get_page(request.GET.get("page"))
+
+    return render(request, "billing/invoices/list.html", {"page_obj": page_obj})
 
 
 def invoice_create(request: HttpRequest) -> HttpResponse:
-    # Placeholder : on implémente après
-    return render(request, "billing/invoices/form.html", {})
+    """
+    Crée une facture à partir d'un formset de lignes (produit + quantité).
+    Important : on ne crée la facture en base QUE si le formset est valide.
+    """
+    if request.method == "POST":
+        formset = InvoiceLineFormSet(request.POST, prefix="items")
+        if formset.is_valid():
+            # Crée la facture maintenant (car on sait qu'on a au moins 1 ligne valide)
+            invoice = Invoice.objects.create()
+
+            # Merge des produits identiques (si l'utilisateur a mis le même produit 2 fois)
+            merged = {}  # product_id -> {"product": Product, "qty": int}
+
+            for form in formset:
+                if not hasattr(form, "cleaned_data"):
+                    continue
+                if form.cleaned_data.get("DELETE"):
+                    continue
+
+                product = form.cleaned_data.get("product")
+                qty = form.cleaned_data.get("quantity")
+
+                if not product or not qty:
+                    continue
+
+                if product.id in merged:
+                    merged[product.id]["qty"] += qty
+                else:
+                    merged[product.id] = {"product": product, "qty": qty}
+
+            # Crée les lignes de facture en snapshotant le prix
+            for data in merged.values():
+                product = data["product"]
+                qty = data["qty"]
+
+                InvoiceItem.objects.create(
+                    invoice=invoice,
+                    product=product,
+                    quantity=qty,
+                    unit_price=product.price,  # snapshot du prix
+                )
+
+            return redirect(f"/invoices/{invoice.id}/")
+    else:
+        formset = InvoiceLineFormSet(prefix="items")
+
+    return render(request, "billing/invoices/form.html", {"formset": formset})
 
 
 def invoice_detail(request: HttpRequest, pk: int) -> HttpResponse:
-    # Placeholder : on implémente après
-    return render(request, "billing/invoices/detail.html", {})
+    invoice = get_object_or_404(Invoice, pk=pk)
+
+    items = invoice.items.select_related("product").order_by("id")
+    total_qty = sum(i.quantity for i in items)
+    total_amount = sum((i.line_total for i in items), Decimal("0.00"))
+
+    return render(
+        request,
+        "billing/invoices/detail.html",
+        {
+            "invoice": invoice,
+            "items": items,
+            "total_qty": total_qty,
+            "total_amount": total_amount,
+        },
+    )

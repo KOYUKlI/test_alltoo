@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3 mb-0">Facture #{{ invoice.id }}</h1>
+  <a class="btn btn-outline-secondary" href="/invoices/">Retour</a>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead>
+            <tr>
+              <th>Produit</th>
+              <th>PU</th>
+              <th>Qté</th>
+              <th>Total ligne</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for it in items %}
+            <tr>
+              <td>{{ it.product.name }}</td>
+              <td>{{ it.unit_price }} €</td>
+              <td>{{ it.quantity }}</td>
+              <td>{{ it.line_total }} €</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-center text-muted">Aucune ligne</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card p-3">
+      <p class="mb-1"><strong>Date :</strong> {{ invoice.created_at }}</p>
+      <p class="mb-1"><strong>Total produits :</strong> {{ total_qty }}</p>
+      <p class="mb-0 fs-5"><strong>Total à payer :</strong> {{ total_amount }} €</p>
+    </div>
+  </div>
+</div>
+{% endblock %}
